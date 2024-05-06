@@ -1,18 +1,22 @@
 import pygame
 from pygame.locals import *
-from .constants import *
-from .state_machine import StateMachine, State
+from .tool_ui import Tool
 from .screen import ResizableScreen
 from .utils import Debug
+from .constants import *
+from .asset_manager import AssetManager
+
+pygame.init()
+AssetManager.load_assets(ASSETS_PATH)
 
 
-class App(StateMachine):
-    def __init__(self, initial_state: State):
+class App():
+    def __init__(self):
         self.clock = pygame.time.Clock()
-        self.screen = ResizableScreen(SCREENSIZE)
-
-        print(self.screen.window)
-        super().__init__(initial_state)
+        self.window = ResizableScreen(SCREENSIZE)
+        self.renderer = self.window.renderer
+        print(AssetManager.images)
+        self.tool = Tool(self.window, AssetManager.images['face_1'], AssetManager.images['face_2'])
 
     def loop(self):
         while True:
@@ -20,13 +24,13 @@ class App(StateMachine):
             
             delta_time = self.get_dt()
 
-            self.update(delta_time)
-            self.draw(self.screen.draw_surface)
+            self.renderer.draw_color = (255, 255, 255)
+            self.renderer.clear()            
 
-            Debug.draw_queue(self.screen.draw_surface)
+            self.tool.draw()
 
-            self.screen.update_window()
-            pygame.display.update()
+            self.window.update_window()
+            self.renderer.present()
             self.clock.tick(FPS)
 
     def handle_events(self):
@@ -36,9 +40,9 @@ class App(StateMachine):
                 raise SystemExit
             
             if event.type == WINDOWSIZECHANGED:
-                self.screen.on_resize((event.x, event.y))
+                self.window.on_resize((event.x, event.y))
 
-            Debug.handle_event(event)
+            #Debug.handle_event(event)
 
     def get_dt(self):
         delta_time = self.clock.get_time() / 1000

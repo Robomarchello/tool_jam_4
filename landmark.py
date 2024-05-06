@@ -1,4 +1,5 @@
 import math
+import numpy
 import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
@@ -16,8 +17,19 @@ options = vision.FaceLandmarkerOptions(base_options=base_options,
                                        num_faces=1)
 detector = vision.FaceLandmarker.create_from_options(options)
 
+IMAGE = 'src/assets/images/face_3.png'
+
+
 # STEP 3: Load the input image.
-image = mp.Image.create_from_file('src/face.png')
+image = mp.Image.create_from_file(IMAGE)
+surface = pygame.image.load(IMAGE)
+surface = pygame.transform.rotate(surface, 90)
+surface = pygame.transform.flip(surface, False, True)
+
+pixels = pygame.surfarray.array3d(surface)
+
+image = mp.Image(image_format=mp.ImageFormat.SRGB, data=pixels)
+
 
 # STEP 4: Detect face landmarks from the input image.
 detection_result = detector.detect(image)
@@ -30,7 +42,7 @@ class App():
         self.clock = pygame.time.Clock()
         self.screen = pygame.display.set_mode(SCREENSIZE)
 
-        self.image = pygame.image.load('src/face.png')
+        self.image = pygame.image.load(IMAGE)
         self.img_size = self.image.get_size()
 
         self.selected = set()
@@ -100,10 +112,6 @@ class App():
                 index = i
         
         return index
-
-    def get_dt(self):
-        delta_time = self.clock.get_time() / 1000
-        return delta_time
-
+     
 
 App().loop()

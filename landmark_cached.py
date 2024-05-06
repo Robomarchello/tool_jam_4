@@ -16,7 +16,6 @@ for i in range(len(points)):
             ADJ_LIST[i].add(edge[1])
         elif edge[1] == i:
             ADJ_LIST[i].add(edge[0])
-print(ADJ_LIST[0])
 
 used_tris = []
 triangles = []
@@ -38,7 +37,8 @@ def scale_pos(norm_pos, factor):
 
 for p in range(len(points)):
     adj_triangles(p)
-print(triangles)
+
+
 class App():
     def __init__(self):
         self.clock = pygame.time.Clock()
@@ -59,7 +59,7 @@ class App():
 
             for i, point in enumerate(points):
                 pos_point = scale_pos(point, self.img_size)
-                
+                 
                 if i in self.selected:
                     pygame.draw.circle(self.screen, (255, 0, 0), pos_point, 3)
                 else:
@@ -93,7 +93,6 @@ class App():
                     closest = self.get_closest(self.mouse_pos)
                     print(closest)
                     if closest in self.selected:
-                        print('closest')
                         self.selected.remove(closest)
                     
             

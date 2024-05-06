@@ -1,5 +1,6 @@
 import pygame
 from pygame.locals import *
+from pygame._sdl2.video import Window, Renderer, Texture, Image
 
 
 class Screen:
@@ -21,27 +22,37 @@ class Screen:
         pass
 
 
-class ResizableScreen(Screen):
-    FLAGS = [pygame.RESIZABLE]
+class ScreenSdl2:
+    window_size: tuple[int, int]
+    window: Window
+    renderer: Renderer
 
-    def __init__(self, original_size: tuple[int, int]):
-        self.original_size = original_size
-        self.fixed_rect = pygame.Rect((0, 0), self.original_size)
-
-        self.fit_rect = None
-        self.on_resize(original_size)
-        super().__init__(self.original_size)
+    def __init__(self, screen_size):
+        self.window_size = screen_size
+        self.window = Window(size=screen_size)
+        self.renderer = Renderer(self.window)
 
     def update_window(self):
-        #draw draw_surface to the window
-        scaled = pygame.transform.scale(
-            self.draw_surface, self.fit_rect.size
-        )
-        self.window.blit(scaled, self.fit_rect.topleft)
+        pass
+
+
+class ResizableScreen(ScreenSdl2):
+    def __init__(self, original_size: tuple[int, int]):
+        self.original_size = original_size
+        self.window_size = original_size
+
+        super().__init__(self.original_size)
+
+        self.debug_surf: pygame.Surface
+        self.window.resizable = True
+        self.on_resize(original_size)
 
     def on_resize(self, new_size):
-        window_rect = pygame.Rect((0, 0), new_size)
+        self.window_size = new_size
+        self.debug_surf = pygame.Surface(self.window_size, flags=SRCALPHA)
 
-        self.fit_rect = self.fixed_rect.copy() 
-        self.fit_rect = self.fit_rect.fit(window_rect)
-        
+    def update_window(self):
+        debug_texture = Texture.from_surface(self.renderer, self.debug_surf)
+        debug_texture.draw()
+
+        self.debug_surf.fill((0, 0, 0, 0))

@@ -1,62 +1,72 @@
+from pathlib import Path
 from typing import Dict
 import os
 import pygame
-from .constants import *
+#from .constants import *
 
 pygame.init()
+
 
 
 class AssetManager():
     asset_path = None
 
-    images: Dict[str, SurfOrSurfList] = {}
+    images: Dict[str,  pygame.Surface] = {}
     sounds: Dict[str, pygame.mixer.Sound] = {}
-    fonts: Dict[str, pygame.Font]= {}
+    fonts: Dict[str, pygame.Font] = {}
     data = {}
 
-    def load_assets(cls, path=None):
+    @classmethod
+    def load_assets(cls, asset_path):
+        cls.asset_path = asset_path
+
+        cls._load_images()
+        cls._load_sounds()
+
+    @classmethod
+    def _load_images(cls, path=None, current_dict=None):
+        if path is None:
+            path = cls.asset_path + 'images/'
+            current_dict = cls.images
+            
         for element in os.scandir(path):
             if element.is_dir():
-                pass
+                current_dict[element.name] = {}
+                cls._load_images(element.path, current_dict[element.name])
             
             if element.is_file():
                 if element.name.endswith('.png'):
-                    cls.load_image()
-                    
-
-    @classmethod
-    def load_image(cls, filename) -> pygame.Surface:
-        image = pygame.image.load(filename).convert_alpha()
-        name = Path(filename).stem
-        cls.images[name] = image
-
-        return image
+                    image = pygame.image.load(element.path)#.convert_alpha()
+                    key, _extension = os.path.splitext(element.name)
+                    current_dict[key] = image
     
     @classmethod
-    def load_sound(cls, filename) -> pygame.mixer.Sound:
-        sound = pygame.mixer.Sound(filename)
-        name = Path(filename).stem
-        cls.sounds[name] = sound
-
-        return sound
+    def _load_sounds(cls, path=None, current_dict=None):
+        if path is None:
+            path = cls.asset_path + 'sounds/'
+            current_dict = cls.sounds
+            
+        for element in os.scandir(path):
+            if element.is_dir():
+                current_dict[element.name] = {}
+                cls._load_sounds(element.path, current_dict[element.name])
+            
+            if element.is_file():
+                if element.name.endswith(('.ogg', '.wav')):
+                    sound = pygame.mixer.Sound(element.path)
+                    key, _extension = os.path.splitext(element.name)
+                    current_dict[key] = sound
 
     @classmethod
-    def load_font(cls, filename, size) -> pygame.Font:
-        name = Path(filename).stem
+    def load_font(cls, file_path, size) -> pygame.Font:
+        name = Path(file_path).stem
 
-        font = pygame.font.Font(filename, size)
+        font = pygame.font.Font(file_path, size)
 
         cls.fonts[f'{name}_{size}'] = font
 
         return font
 
-    @classmethod
-    def load_images(cls, path):
-        for name in os.listdir(path):
-            filepath = path + '/' + name
-
-            if name.endswith(('.png', '.jpg')):
-                cls.load_image(filepath)
     
     @classmethod
     def load_sounds(cls, path):
@@ -78,6 +88,6 @@ class AssetManager():
 
     
 if __name__ == '__main__':
-    AssetManager()
-
-    AssetManager.load_images(IMAGES)
+    AssetManager.load_assets('src/assets/')
+    print(AssetManager.images)
+    print(AssetManager.sounds)
