@@ -16,7 +16,7 @@ class App():
         self.window = ResizableScreen(SCREENSIZE)
         self.renderer = self.window.renderer
         print(AssetManager.images)
-        self.tool = Tool(self.window, AssetManager.images['face_1'], AssetManager.images['face_2'])
+        self.tool = Tool(self.window, AssetManager.images['face_4'], AssetManager.images['face_5'])
 
     def loop(self):
         while True:

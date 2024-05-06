@@ -4,7 +4,7 @@ import json
 
 
 TITLE = 'Game Title'
-SCREENSIZE = (960, 540)
+SCREENSIZE = (1024, 1024)
 FPS = 0
 
 ABS_DIR = str(Path.cwd()).replace('\\', '/')
