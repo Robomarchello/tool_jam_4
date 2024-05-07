@@ -81,4 +81,25 @@ class FaceMesh:
             self.texture.draw_triangle(*other_triangle, *from_tri_uv)
 
 if __name__ == '__main__':
-    pass
+    import pygame
+    
+    image = pygame.image.load('src/assets/images/perfect_face.png')
+    face = FaceMesh(None, image)
+    
+    SCREENSIZE = (1024, 1024)
+    screen = pygame.display.set_mode(SCREENSIZE)
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                raise SystemExit
+
+        screen.fill((255, 255, 255))
+
+        for triangle in TRIANGLES:
+            pos1 = scale_pos(points[triangle[0]], self.img_size)
+            pos2 = scale_pos(points[triangle[1]], self.img_size)
+            pos3 = scale_pos(points[triangle[2]], self.img_size)
+        
+        pygame.display.update()

@@ -29,6 +29,7 @@ def adj_triangles(vertex):
                     used_tris.append(triangle)
 
 
+
 def scale_pos(norm_pos, factor):
     return [
         norm_pos[0] * factor[0],
@@ -39,15 +40,20 @@ for p in range(len(points)):
     adj_triangles(p)
 
 
+triangles = []
+
+triangles = eval(open('eye_tris.txt', 'r').read())
+
 class App():
     def __init__(self):
         self.clock = pygame.time.Clock()
         self.screen = pygame.display.set_mode(SCREENSIZE)
 
-        self.image = pygame.image.load('src/face.png')
+        self.image = pygame.image.load('src/assets/images/face_2.png')
         self.img_size = self.image.get_size()
 
         self.selected = set()
+        self.triangles = []
 
     def loop(self):
         while True:
@@ -64,6 +70,7 @@ class App():
                     pygame.draw.circle(self.screen, (255, 0, 0), pos_point, 3)
                 else:
                     pygame.draw.circle(self.screen, (0, 0, 0), pos_point, 3)
+                    
 
             for triangle in triangles:
                 pos1 = scale_pos(points[triangle[0]], self.img_size)
@@ -86,9 +93,19 @@ class App():
             if event.type == MOUSEMOTION:
                 self.mouse_pos = pygame.Vector2(event.pos)
             
+            if event.type == KEYDOWN:
+                if event.key == K_SPACE:
+                    print(self.triangles)
+            
             if event.type == MOUSEBUTTONDOWN:
                 if event.button == 1:
                     self.selected.add(self.get_closest(self.mouse_pos))
+
+                    if len(self.selected) == 3:
+                        self.triangles.append(tuple(self.selected))
+                        triangles.append(tuple(self.selected))
+                        self.selected.clear()
+
                 if event.button == 3:
                     closest = self.get_closest(self.mouse_pos)
                     print(closest)

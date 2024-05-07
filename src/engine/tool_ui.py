@@ -5,11 +5,11 @@ import json
 
 
 class Tool:
-    def __init__(self, window, image_1, image_2):
+    def __init__(self, window, image_1, image_2, preset_path1=None, preset_path2=None):
         self.window = window
 
-        self.face_mesh_1 = FaceMesh(self.window.renderer, image_1, 'face_preset.json')
-        self.face_mesh_2 = FaceMesh(self.window.renderer, image_2)
+        self.face_mesh_1 = FaceMesh(self.window.renderer, image_1, preset_path1)
+        self.face_mesh_2 = FaceMesh(self.window.renderer, image_2, preset_path2)
         self.mesh_rect_2 = self.face_mesh_2.surface.get_rect()
 
         #self.face_mesh_2.save_face('face_preset.json')
@@ -25,9 +25,15 @@ class Tool:
         self.wireframe = False
 
     def draw(self):
-        self.face_mesh_2.texture.draw()
+        fitted_rect, fitted_points = self.face_mesh_1.fit_to(self.left_view_scaled)
+        map_to_rect, map_to_points = self.face_mesh_2.fit_to(self.right_view_scaled)
 
-        pygame.draw.rect(self.window.surface, (255, 0, 0), self.left_view_scaled)
+        #pygame.draw.rect(self.window.surface, (255, 0, 0), self.left_view_scaled)
+        pygame.draw.rect(self.window.surface, (0, 255, 0), fitted_rect, width=3)
+
+        self.face_mesh_1.texture.draw(dstrect=fitted_rect)
+        self.face_mesh_2.texture.draw(dstrect=map_to_rect)
+
 
         if self.wireframe:
             for point in self.mapped_points:
@@ -35,11 +41,9 @@ class Tool:
             
             self.draw_mesh(self.mapped_points)
 
-        fitted_rect, fitted_points = self.face_mesh_1.fit_to(self.left_view_scaled)
-        pygame.draw.rect(self.window.surface, (0, 255, 0), fitted_rect)
         self.draw_mesh(fitted_points)
         
-        self.face_mesh_1.map_to(self.mapped_points)
+        self.face_mesh_1.map_to(map_to_points)
 
     def draw_mesh(self, points):
         for triangle in TRIANGLES:
