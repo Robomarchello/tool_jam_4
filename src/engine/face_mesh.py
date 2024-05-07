@@ -24,10 +24,11 @@ class FaceMesh:
         surface = pygame.transform.rotate(self.surface, 90)
         surface = pygame.transform.flip(surface, False, True)
         pixels = pygame.surfarray.array3d(surface)
-        image = mp.Image(image_format=mp.ImageFormat.SRGB, data=pixels)
+        self.image = mp.Image(image_format=mp.ImageFormat.SRGB, data=pixels)
+        self.image_rect = self.surface.get_rect()
 
         if mesh_path is None:
-            self.normal_points = self.detect_face(image)
+            self.normal_points = self.detect_face(self.image)
         else:
             with open(mesh_path, 'r') as file:
                 self.normal_points = numpy.array(json.load(file))
@@ -41,12 +42,28 @@ class FaceMesh:
         normal_points = list(map(lambda pos: (pos.x, pos.y), points))
 
         return numpy.array(normal_points)
+    
+    def save_face(self, file_path):
+        '''
+        detect face landmarks and return them
+        '''
+        detection_result = detector.detect(self.image)
+        points = detection_result.face_landmarks[0]
+        normal_points = list(map(lambda pos: (pos.x, pos.y), points))
+
+        with open(file_path, 'w') as file:
+            json.dump(normal_points, file)
             
     def scale(self, factor: Tuple[float, float]):
         return self.normal_points * factor
     
-    def fit_to(self, rect: pygame.Rect):
-        pass
+    def fit_to(self, rect: pygame.Rect): #Union(Tuple[int, int]
+        fitted_rect = self.image_rect.fit(rect)
+        
+        points = self.scale(fitted_rect.size)
+        points += fitted_rect.topleft
+
+        return fitted_rect, points
 
     def map_to(self, points):
         for triangle in TRIANGLES:

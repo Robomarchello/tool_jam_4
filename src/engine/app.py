@@ -15,8 +15,8 @@ class App():
         self.clock = pygame.time.Clock()
         self.window = ResizableScreen(SCREENSIZE)
         self.renderer = self.window.renderer
-        print(AssetManager.images)
-        self.tool = Tool(self.window, AssetManager.images['face_4'], AssetManager.images['face_5'])
+
+        self.tool = Tool(self.window, AssetManager.images['mime'], AssetManager.images['face_2'])
 
     def loop(self):
         while True:
@@ -30,6 +30,7 @@ class App():
             self.tool.draw()
 
             self.window.update_window()
+            self.window.window.title = str(round(self.clock.get_fps()))
             self.renderer.present()
             self.clock.tick(FPS)
 
@@ -40,7 +41,9 @@ class App():
                 raise SystemExit
             
             if event.type == WINDOWSIZECHANGED:
-                self.window.on_resize((event.x, event.y))
+                new_size = (event.x, event.y)
+                self.tool.on_resize(new_size)
+                self.window.on_resize(new_size)
 
             #Debug.handle_event(event)
 

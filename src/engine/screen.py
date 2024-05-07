@@ -43,16 +43,16 @@ class ResizableScreen(ScreenSdl2):
 
         super().__init__(self.original_size)
 
-        self.debug_surf: pygame.Surface
+        self.surface: pygame.Surface
         self.window.resizable = True
         self.on_resize(original_size)
 
     def on_resize(self, new_size):
         self.window_size = new_size
-        self.debug_surf = pygame.Surface(self.window_size, flags=SRCALPHA)
+        self.surface = pygame.Surface(self.window_size, flags=SRCALPHA)
 
     def update_window(self):
-        debug_texture = Texture.from_surface(self.renderer, self.debug_surf)
+        debug_texture = Texture.from_surface(self.renderer, self.surface)
         debug_texture.draw()
 
-        self.debug_surf.fill((0, 0, 0, 0))
+        self.surface.fill((0, 0, 0, 0))
