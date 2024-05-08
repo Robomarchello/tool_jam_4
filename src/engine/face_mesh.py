@@ -1,18 +1,27 @@
 from typing import Tuple
+from copy import deepcopy
 import numpy
 import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 import pygame
 from pygame._sdl2 import Texture
+import pygame._sdl2.window
 from .constants import *
 
-base_options = python.BaseOptions(model_asset_path='src/face_landmarker.task')
-options = vision.FaceLandmarkerOptions(base_options=base_options,
-                                    output_face_blendshapes=False,
-                                    output_facial_transformation_matrixes=False,
-                                    num_faces=1)
-detector = vision.FaceLandmarker.create_from_options(options)
+
+def landmarker_init():
+    base_options = python.BaseOptions(model_asset_path='src/face_landmarker.task')
+    options = vision.FaceLandmarkerOptions(base_options=base_options,
+                                        output_face_blendshapes=False,
+                                        output_facial_transformation_matrixes=False,
+                                        num_faces=1)
+    detector = vision.FaceLandmarker.create_from_options(options)
+
+    return detector
+
+
+detector = landmarker_init()
 
 
 class FaceMesh:
@@ -43,7 +52,7 @@ class FaceMesh:
 
         return numpy.array(normal_points)
     
-    def save_face(self, file_path):
+    def save_mesh(self, file_path):
         '''
         detect face landmarks and return them
         '''
@@ -53,8 +62,18 @@ class FaceMesh:
 
         with open(file_path, 'w') as file:
             json.dump(normal_points, file)
-            
-    def scale(self, factor: Tuple[float, float]):
+    
+    def cull_triangles(self, points):
+        new_triangles = deepcopy(TRIANGLES)
+        blacklist = set()
+
+        for point in points:
+            if 0.0 > point[0] > 1.0 or 0.0 > point[1] > 1.0:
+                blacklist.add(point)
+
+        ...
+
+    def scale(self, factor: Tuple[float, float] | float):
         return self.normal_points * factor
     
     def fit_to(self, rect: pygame.Rect): #Union(Tuple[int, int]
@@ -81,25 +100,30 @@ class FaceMesh:
             self.texture.draw_triangle(*other_triangle, *from_tri_uv)
 
 if __name__ == '__main__':
-    import pygame
-    
-    image = pygame.image.load('src/assets/images/perfect_face.png')
-    face = FaceMesh(None, image)
-    
+    import pygame._sdl2
+
     SCREENSIZE = (1024, 1024)
-    screen = pygame.display.set_mode(SCREENSIZE)
 
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                raise SystemExit
+    screen = pygame.Surface(SCREENSIZE, flags=pygame.SRCALPHA)
+    
+    window = pygame._sdl2.Window(size=SCREENSIZE)
+    renderer = pygame._sdl2.Renderer(window)
+    window.hide()
 
-        screen.fill((255, 255, 255))
+    image = pygame.image.load('src/assets/images/perfect_face1.png')
+    face = FaceMesh(renderer, image)
+    
+    points = face.scale(SCREENSIZE)
 
-        for triangle in TRIANGLES:
-            pos1 = scale_pos(points[triangle[0]], self.img_size)
-            pos2 = scale_pos(points[triangle[1]], self.img_size)
-            pos3 = scale_pos(points[triangle[2]], self.img_size)
+    screen.fill((0, 0, 0, 0))
+
+    for triangle in TRIANGLES:
+        pos1 = points[triangle[0]]
+        pos2 = points[triangle[1]]
+        pos3 = points[triangle[2]]
+
+        pygame.draw.polygon(screen, (0, 0, 0), (pos1, pos2, pos3), 3)
+
         
-        pygame.display.update()
+    pygame.image.save(screen, 'preset.png')
+    #face.save_mesh('face_preset.json')

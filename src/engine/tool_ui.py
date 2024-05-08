@@ -1,7 +1,6 @@
 import pygame
 from .face_mesh import FaceMesh
 from .constants import TRIANGLES
-import json
 
 
 class Tool:

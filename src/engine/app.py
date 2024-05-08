@@ -17,7 +17,7 @@ class App():
         self.renderer = self.window.renderer
 
         self.tool = Tool(self.window, 
-                        AssetManager.images['face_3'], AssetManager.images['face_1'],
+                        AssetManager.images['perfect_face1'], AssetManager.images['face_1'],
                         None, None)# 'face_preset.json'
 
     def loop(self):
