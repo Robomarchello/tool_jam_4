@@ -1,7 +1,7 @@
 import pygame
 import numpy
 from .face_mesh import FaceMesh
-from .constants import TRIANGLES
+from .constants import TRIANGLES, SCREENSIZE
 
 
 class Tool:
@@ -17,41 +17,34 @@ class Tool:
         self.mapped_points = self.face_mesh_2.scale(self.mesh_rect_2.size)
 
         # layout
-        # 15% 100%
-        # 43% %50 x 2
-        # 42% %100 
-        self.left_view_norm = pygame.FRect(0.0, 0.0, 0.5, 1)
-        self.right_view_norm = pygame.FRect(0.5, 0.0, 0.5, 1)
-
-        self.face_1_view_norm = pygame.FRect(0.0, 0.0, 0.43, 0.5)
-        self.face_2_view_norm = pygame.FRect(0.0, 0.5, 0.43, 0.5)
-        self.results_view_norm = pygame.FRect(0.43, 0, 0.42, 1.0)
-        self.menu_panel_norm = pygame.FRect(0.85, 0, 0.15, 1.0)
+        self.scaled_area = SCREENSIZE
+        self.face_1_view_norm = pygame.FRect(0.0, 0.0, 0.5, 0.5)
+        self.face_2_view_norm = pygame.FRect(0.0, 0.5, 0.5, 0.5)
+        self.results_view_norm = pygame.FRect(0.5, 0, 0.5, 1.0)
+        self.menu_panel_rect = pygame.Rect(0, 0, 128, self.scaled_area[1])
 
         self.on_resize(self.window.window_size)
 
         self.wireframe = False
 
     def draw(self):
-        fitted_rect, fitted_points = self.face_mesh_1.fit_to(self.face_1_view_scaled)
+        surface = self.window.surface
+        face_1_rect, fitted_points = self.face_mesh_1.fit_to(self.face_1_view_scaled)
         face_2_rect = self.face_mesh_2.image_rect.fit(self.face_2_view_scaled)
         result_rect, result_points = self.face_mesh_2.fit_to(self.results_view_scaled)
 
-        pygame.draw.rect(self.window.surface, (255, 0, 0), self.face_1_view_scaled, width=3)
-        pygame.draw.rect(self.window.surface, (0, 0, 255), self.face_2_view_scaled, width=3)
-        pygame.draw.rect(self.window.surface, (0, 255, 0), self.results_view_scaled, width=3)
-        pygame.draw.rect(self.window.surface, (0, 0, 0), self.menu_panel_scaled)
+        pygame.draw.rect(surface, (255, 0, 0), self.face_1_view_scaled, width=3)
+        pygame.draw.rect(surface, (0, 0, 255), self.face_2_view_scaled, width=3)
+        pygame.draw.rect(surface, (0, 255, 0), self.results_view_scaled, width=3)
+        pygame.draw.rect(surface, (0, 0, 0), self.menu_panel_rect)
 
-        #pygame.draw.rect(self.window.surface, (255, 0, 0), self.left_view_scaled)
-        pygame.draw.rect(self.window.surface, (0, 255, 0), fitted_rect, width=3)
-
-        self.face_mesh_1.texture.draw(dstrect=fitted_rect)
+        self.face_mesh_1.texture.draw(dstrect=face_1_rect)
         self.face_mesh_2.texture.draw(dstrect=face_2_rect)
         self.face_mesh_2.texture.draw(dstrect=result_rect)
 
         if self.wireframe:
             for point in self.mapped_points:
-                pygame.draw.circle(self.window.surface, (255, 0, 0), point, 3)
+                pygame.draw.circle(surface, (255, 0, 0), point, 3)
             
             self.draw_mesh(self.mapped_points)
 
@@ -84,25 +77,21 @@ class Tool:
         pass
 
     def on_resize(self, screen_size):
-        self.left_view_scaled = self.scale_norm_rect(
-            self.left_view_norm, screen_size
-            )
-        self.right_view_scaled = self.scale_norm_rect(
-            self.right_view_norm, screen_size
-            )
-        
+        self.scaled_area = [
+            screen_size[0] - self.menu_panel_rect.width,
+            screen_size[1]
+        ]
         self.face_1_view_scaled = self.scale_norm_rect(
-            self.face_1_view_norm, screen_size
+            self.face_1_view_norm, self.scaled_area
             )
         self.face_2_view_scaled = self.scale_norm_rect(
-            self.face_2_view_norm, screen_size
+            self.face_2_view_norm, self.scaled_area
             )
         self.results_view_scaled = self.scale_norm_rect(
-            self.results_view_norm, screen_size
+            self.results_view_norm, self.scaled_area
             )
-        self.menu_panel_scaled = self.scale_norm_rect(
-            self.menu_panel_norm, screen_size
-            )
+        self.menu_panel_rect.right = screen_size[0]
+        self.menu_panel_rect.height = screen_size[1]
 
     def scale_norm_rect(self, rect, factor) -> pygame.Rect:
         scaled = pygame.Rect(

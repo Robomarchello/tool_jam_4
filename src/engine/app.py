@@ -20,16 +20,13 @@ class App():
                         AssetManager.images['perfect_face1'], AssetManager.images['face_3'],
                         None, None)# 'face_preset.json'
 
+        self.draw()
+
     def loop(self):
         while True:
             self.handle_events()
             
             delta_time = self.get_dt()
-
-            self.renderer.draw_color = (255, 255, 255)
-            self.renderer.clear()            
-
-            self.tool.draw()
 
             self.window.update_window()
             self.window.window.title = str(round(self.clock.get_fps()))
@@ -46,8 +43,16 @@ class App():
                 new_size = (event.x, event.y)
                 self.tool.on_resize(new_size)
                 self.window.on_resize(new_size)
+                
+                self.draw()
 
             #Debug.handle_event(event)
+    
+    def draw(self):
+        self.renderer.draw_color = (255, 255, 255)
+        self.renderer.clear()            
+
+        self.tool.draw()
 
     def get_dt(self):
         delta_time = self.clock.get_time() / 1000
