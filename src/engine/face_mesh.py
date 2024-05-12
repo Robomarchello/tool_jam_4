@@ -20,12 +20,11 @@ def landmarker_init():
 
     return detector
 
-
 detector = landmarker_init()
 
 
 class FaceMesh:
-    def __init__(self, renderer, image, mesh_path=None):
+    def __init__(self, renderer, image, mesh_path=None, triangles=None):
         self.surface = image
         self.texture: Texture = Texture.from_surface(renderer, self.surface)
 
@@ -41,6 +40,11 @@ class FaceMesh:
         else:
             with open(mesh_path, 'r') as file:
                 self.normal_points = numpy.array(json.load(file))
+
+        if triangles is None:
+            self.triangles = TRIANGLES
+        else:
+            self.triangles = triangles
 
     def detect_face(self, image):
         '''
@@ -63,20 +67,21 @@ class FaceMesh:
         with open(file_path, 'w') as file:
             json.dump(normal_points, file)
     
-    def cull_triangles(self, points):
-        new_triangles = deepcopy(TRIANGLES)
-        blacklist = set()
+    def cull_mask(self):
+        blacklist = []
 
-        for point in points:
-            if 0.0 > point[0] > 1.0 or 0.0 > point[1] > 1.0:
-                blacklist.add(point)
+        for i, point in enumerate(self.normal_points):
+            if point[0] < 0.0 or point[0] > 1.0 or point[1] < 0.0 or point[1] > 1.0:
+                blacklist.append(i)
 
-        ...
+        visible_mask = ~numpy.any(numpy.isin(self.triangles, blacklist), axis=1)
+
+        return visible_mask
 
     def scale(self, factor: Tuple[float, float] | float):
         return self.normal_points * factor
     
-    def fit_to(self, rect: pygame.Rect): #Union(Tuple[int, int]
+    def fit_to(self, rect: pygame.Rect):
         fitted_rect = self.image_rect.fit(rect)
         
         points = self.scale(fitted_rect.size)
@@ -85,7 +90,7 @@ class FaceMesh:
         return fitted_rect, points
 
     def map_to(self, points):
-        for triangle in TRIANGLES:
+        for triangle in self.triangles:
             from_tri_uv = (
                 self.normal_points[triangle[0]],
                 self.normal_points[triangle[1]],
@@ -96,9 +101,9 @@ class FaceMesh:
                 points[triangle[1]],
                 points[triangle[2]]
                 )
-
             self.texture.draw_triangle(*other_triangle, *from_tri_uv)
-
+            
+            
 if __name__ == '__main__':
     import pygame._sdl2
 
