@@ -17,3 +17,9 @@ DEBUG_SIZE = 16
 TESSELATIONS = mp.solutions.face_mesh.FACEMESH_TESSELATION
 with open('src/data/triangles.json', 'r') as file:
     TRIANGLES = json.load(file)
+
+BG_COLOR = (32, 35, 56)
+CONTOUR_COLOR = (51, 60, 81)
+BUTTON_BG_COLOR = (65, 166, 246)
+TEXT_COLOR = (204, 206, 211)
+WHITE = (255, 255, 255)

@@ -63,7 +63,12 @@ class AssetManager():
 
         font = pygame.font.Font(file_path, size)
 
-        cls.fonts[f'{name}_{size}'] = font
+        key_name = f'{name}_{size}'
+        # skip if already loaded
+        if key_name in cls.fonts:
+            return cls.fonts[key_name]
+
+        cls.fonts[key_name] = font
 
         return font
 

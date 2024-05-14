@@ -5,6 +5,7 @@ from .screen import ResizableScreen
 from .utils import Debug
 from .constants import *
 from .asset_manager import AssetManager
+from .mouse import Mouse
 
 pygame.init()
 AssetManager.load_assets(ASSETS_PATH)
@@ -25,8 +26,11 @@ class App():
     def loop(self):
         while True:
             self.handle_events()
+            Mouse.update()
             
             delta_time = self.get_dt()
+
+            self.tool.update()
 
             self.window.update_window()
             self.window.window.title = str(round(self.clock.get_fps()))
@@ -46,10 +50,11 @@ class App():
                 
                 self.draw()
 
-            #Debug.handle_event(event)
+            Mouse.handle_event(event)
+            self.tool.handle_event(event)
     
     def draw(self):
-        self.renderer.draw_color = (255, 255, 255)
+        self.renderer.draw_color = BG_COLOR
         self.renderer.clear()            
 
         self.tool.draw()

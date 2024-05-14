@@ -1,7 +1,9 @@
 import pygame
 import numpy
+from .asset_manager import AssetManager
 from .face_mesh import FaceMesh
-from .constants import TRIANGLES, SCREENSIZE
+from .ui import *
+from .constants import *
 
 
 class Tool:
@@ -23,9 +25,20 @@ class Tool:
         self.results_view_norm = pygame.FRect(0.5, 0, 0.5, 1.0)
         self.menu_panel_rect = pygame.Rect(0, 0, 128, self.scaled_area[1])
 
+        # --- face 1 context menu
+        face_1_functions = (self.hello, self.hello)
+        self.face_1_context = generate_face_1_context(face_1_functions)
+        
+        self.face_1_context.update_positions()
+        
+
         self.on_resize(self.window.window_size)
 
         self.wireframe = False
+
+    def update(self):
+        self.face_1_context.update()
+        
 
     def draw(self):
         surface = self.window.surface
@@ -33,10 +46,10 @@ class Tool:
         face_2_rect = self.face_mesh_2.image_rect.fit(self.face_2_view_scaled)
         result_rect, result_points = self.face_mesh_2.fit_to(self.results_view_scaled)
 
-        pygame.draw.rect(surface, (255, 0, 0), self.face_1_view_scaled, width=3)
-        pygame.draw.rect(surface, (0, 0, 255), self.face_2_view_scaled, width=3)
-        pygame.draw.rect(surface, (0, 255, 0), self.results_view_scaled, width=3)
-        pygame.draw.rect(surface, (0, 0, 0), self.menu_panel_rect)
+        pygame.draw.rect(surface, CONTOUR_COLOR, self.face_1_view_scaled, width=3)
+        pygame.draw.rect(surface, CONTOUR_COLOR, self.face_2_view_scaled, width=3)
+        pygame.draw.rect(surface, CONTOUR_COLOR, self.results_view_scaled, width=3)
+        pygame.draw.rect(surface, CONTOUR_COLOR, self.menu_panel_rect)
 
         self.face_mesh_1.texture.draw(dstrect=face_1_rect)
         self.face_mesh_2.texture.draw(dstrect=face_2_rect)
@@ -52,6 +65,14 @@ class Tool:
         
         self.face_mesh_1.map_to(result_points)
 
+        self.face_1_context.draw(surface)
+
+    def hello(self):
+        print('і бачу і бачу')
+
+    def handle_event(self, event):
+        self.face_1_context.handle_event(event)
+
     def draw_mesh(self, points):
         for triangle in self.triangles:
             tri = [
@@ -60,7 +81,7 @@ class Tool:
                 points[triangle[2]]
             ]
 
-            pygame.draw.polygon(self.window.surface, (0, 0, 0), tri, 2)
+            pygame.draw.polygon(self.window.surface, (0, 0, 0), tri, 1)
 
     def cull_meshes(self):
         mask_1 = self.face_mesh_1.cull_mask()
@@ -73,27 +94,7 @@ class Tool:
 
         return triangles
 
-    def update(self):
-        pass
-
-    def on_resize(self, screen_size):
-        self.scaled_area = [
-            screen_size[0] - self.menu_panel_rect.width,
-            screen_size[1]
-        ]
-        self.face_1_view_scaled = self.scale_norm_rect(
-            self.face_1_view_norm, self.scaled_area
-            )
-        self.face_2_view_scaled = self.scale_norm_rect(
-            self.face_2_view_norm, self.scaled_area
-            )
-        self.results_view_scaled = self.scale_norm_rect(
-            self.results_view_norm, self.scaled_area
-            )
-        self.menu_panel_rect.right = screen_size[0]
-        self.menu_panel_rect.height = screen_size[1]
-
-    def scale_norm_rect(self, rect, factor) -> pygame.Rect:
+    def scale_by(self, rect, factor) -> pygame.Rect:
         scaled = pygame.Rect(
             rect.x * factor[0],
             rect.y * factor[1],
@@ -101,3 +102,21 @@ class Tool:
             rect.height * factor[1],
         )
         return scaled
+
+    def on_resize(self, screen_size):
+        self.scaled_area = [
+            screen_size[0] - self.menu_panel_rect.width,
+            screen_size[1]
+        ]
+        self.face_1_view_scaled = self.scale_by(
+            self.face_1_view_norm, self.scaled_area
+            )
+        self.face_2_view_scaled = self.scale_by(
+            self.face_2_view_norm, self.scaled_area
+            )
+        self.results_view_scaled = self.scale_by(
+            self.results_view_norm, self.scaled_area
+            )
+        self.menu_panel_rect.right = screen_size[0]
+        self.menu_panel_rect.height = screen_size[1]
+
