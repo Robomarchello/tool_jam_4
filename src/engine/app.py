@@ -15,10 +15,11 @@ class App():
     def __init__(self):
         self.clock = pygame.time.Clock()
         self.window = ResizableScreen(SCREENSIZE)
+        self.window.window.title = TITLE
         self.renderer = self.window.renderer
 
         self.tool = Tool(self.window, 
-                        AssetManager.images['perfect_face1'], AssetManager.images['face_3'],
+                        AssetManager.images['face_4'], AssetManager.images['face_5'],
                         None, None)# 'face_preset.json'
 
         self.draw()
@@ -33,7 +34,6 @@ class App():
             self.tool.update()
 
             self.window.update_window()
-            self.window.window.title = str(round(self.clock.get_fps()))
             self.renderer.present()
             self.clock.tick(FPS)
 

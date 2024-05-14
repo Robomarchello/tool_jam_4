@@ -3,7 +3,7 @@ from pathlib import Path
 import json
 
 
-TITLE = 'Game Title'
+TITLE = 'Maskify'
 SCREENSIZE = (1280, 720)
 FPS = 0
 

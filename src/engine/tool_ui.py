@@ -6,6 +6,8 @@ from .face_mesh import FaceMesh
 from .ui import *
 from .constants import *
 from .mouse import Mouse
+import tkinter as tk
+from tkinter import filedialog
 
 
 class Tool:
@@ -28,6 +30,8 @@ class Tool:
 
         self.triangles = self.cull_meshes() 
 
+        self.side_bar = SideBar(self.window, self.save, self.save_mask)
+
         if not self.impossible:
             self.mapped_points = self.face_mesh_2.scale(self.mesh_rect_2.size)
 
@@ -47,6 +51,8 @@ class Tool:
         self.face_2_context = generate_face_2_context(
             self, self.window.rect, face_2_functions
             )
+        
+        self.download_rect = pygame.Rect(0, 0, 1024, 1024)
 
         self.focus_context = None
 
@@ -66,7 +72,9 @@ class Tool:
 
         else:
             self.focus_context = None
-        
+
+        self.side_bar.update()
+
     def draw(self):
         self.window.renderer.draw_color = BG_COLOR
         self.window.renderer.clear()  
@@ -118,6 +126,8 @@ class Tool:
         if self.focus_context is not None:
             self.focus_context.draw(surface)
 
+        self.side_bar.draw(surface)
+    
     def face_1_set_image(self):
         location = AssetManager.select_image()
         
@@ -178,9 +188,63 @@ class Tool:
 
         self.draw()
 
+    def save(self):
+        file_path = filedialog.asksaveasfilename(
+            defaultextension='.png', filetypes=IMAGE_TYPES
+            )
+        if file_path == '':
+            return
+        
+        if self.impossible:
+            return
+
+        face_rect, download_points = self.face_mesh_2.fit_to(self.window.rect)
+        result_rect, result_points = self.face_mesh_2.fit_to(self.window.rect)
+        self.window.window_size = (1024, 1024)
+        self.window.size = self.window.window_size
+
+        self.window.renderer.draw_color = (0, 0, 0)
+        self.window.renderer.clear()
+
+        self.face_mesh_2.texture.draw(dstrect=face_rect)
+
+        self.face_mesh_1.map_to(result_points)
+
+        saved = self.window.renderer.to_surface()
+        pygame.image.save(saved, file_path)
+
+        self.draw()
+
+    def save_mask(self):
+        file_path = filedialog.asksaveasfilename(
+            defaultextension='.png', filetypes=IMAGE_TYPES
+            )
+        if file_path == '':
+            return
+        
+        if self.impossible:
+            return
+
+        face_rect, download_points = self.face_mesh_2.fit_to(self.window.rect)
+        result_rect, result_points = self.face_mesh_2.fit_to(self.window.rect)
+        self.window.window_size = (1024, 1024)
+        self.window.size = self.window.window_size
+
+        self.window.renderer.draw_color = (0, 0, 0)
+        self.window.renderer.clear()
+
+        self.face_mesh_1.map_to(result_points)
+
+        saved = self.window.renderer.to_surface()
+        pygame.image.save(saved, file_path)
+
+        self.draw()
+
     def handle_event(self, event):
         if self.focus_context is not None:
             self.focus_context.handle_event(event)
+
+        self.side_bar.handle_event(event)
 
     def draw_mesh(self, points):
         for triangle in self.triangles:
@@ -234,3 +298,4 @@ class Tool:
         self.menu_panel_rect.right = screen_size[0]
         self.menu_panel_rect.height = screen_size[1]
 
+        self.side_bar.on_resize(screen_size)
