@@ -5,6 +5,7 @@ from pygame.locals import *
 from src.engine.ui import Button
 from src.engine.constants import *
 from src.engine.asset_manager import AssetManager
+from src.engine.mouse import Mouse
 
 
 class Focus(Enum):
@@ -13,8 +14,11 @@ class Focus(Enum):
 
 
 class ContextMenu:
-    def __init__(self, rect, font, title, buttons:tuple[Button]):
+    def __init__(self, tool, rect, bound_rect, font, title, buttons:tuple[Button]):
+        self.tool = tool
+        
         self.rect = rect
+        self.bound_rect = bound_rect
 
         self.title = title
         self.render = font.render(title, True, TEXT_COLOR)
@@ -24,12 +28,15 @@ class ContextMenu:
         self.buttons = buttons
 
         self.focus = False
-        self.visible = False
+        self.visible = True
+
 
     def draw(self, surface):
+        if not self.visible:
+            return 
         pygame.draw.rect(surface, CONTOUR_COLOR, self.rect)
         surface.blit(self.render, self.text_rect.topleft)
-
+        
         for button in self.buttons:
             button.draw(surface)
 
@@ -38,6 +45,9 @@ class ContextMenu:
             button.update()
 
     def update_positions(self):
+        self.rect = self.rect.clamp(self.bound_rect)
+        self.text_rect.top = self.rect.top + 5
+        self.text_rect.centerx = self.rect.centerx
         self.buttons[0].rect.centerx = self.rect.centerx
         self.buttons[0].rect.top = self.text_rect.bottom + 5
 
@@ -52,25 +62,34 @@ class ContextMenu:
         if event.type == MOUSEBUTTONDOWN:
             if event.button == 3:
                 self.visible = True
-            elif event.button == 1:
-                self.visible = False
-
+                self.rect.topleft = Mouse.position
+                self.update_positions()
+                self.tool.draw()
+                
+            if event.button == 1:
+                if not self.rect.collidepoint(Mouse.position):
+                    self.visible = False
+                    self.tool.draw()
+                
         for button in self.buttons:
             button.handle_event(event)
 
 
-def generate_face_1_context(functions):
-    context_rect = pygame.Rect(100, 30, 190, 250)
+context_rect = pygame.Rect(100, 30, 190, 200)
+button_font = AssetManager.load_font('src/assets/other/font.ttf', 24)
+button_rect = pygame.Rect(50, 50, 175, 50)
+
+def generate_face_1_context(tool_ui, bound_rect, functions):
     title = 'Face 1 select'
 
     button_font = AssetManager.load_font('src/assets/other/font.ttf', 24)
     button_rect = pygame.Rect(50, 50, 175, 50)
     button_1 = Button(
-        button_rect.copy(), 'Orest', button_font, 
+        button_rect.copy(), 'Load Face Preset', button_font, 
         BUTTON_BG_COLOR, WHITE, None
         )
     button_2 = Button(
-        button_rect.copy(), 'Lutiy', button_font, 
+        button_rect.copy(), 'Load Image', button_font, 
         BUTTON_BG_COLOR, WHITE, None
         )
     buttons = [button_1, button_2]
@@ -79,7 +98,31 @@ def generate_face_1_context(functions):
         button.action = functions[i]
 
     context = ContextMenu(
-        context_rect, button_font, title, buttons
+        tool_ui, context_rect, bound_rect, button_font, title, buttons
+        )
+    
+    context.update_positions()
+
+    return context
+
+def generate_face_2_context(tool_ui, bound_rect, functions):
+    title = 'Face 2 select'
+
+    button_1 = Button(
+        button_rect.copy(), 'Load Face Preset', button_font, 
+        BUTTON_BG_COLOR, WHITE, None
+        )
+    button_2 = Button(
+        button_rect.copy(), 'Load Image', button_font, 
+        BUTTON_BG_COLOR, WHITE, None
+        )
+    buttons = [button_1, button_2]
+
+    for i, button in enumerate(buttons):
+        button.action = functions[i]
+
+    context = ContextMenu(
+        tool_ui, context_rect, bound_rect, button_font, title, buttons
         )
     
     context.update_positions()

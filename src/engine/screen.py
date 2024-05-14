@@ -41,6 +41,8 @@ class ResizableScreen(ScreenSdl2):
         self.original_size = original_size
         self.window_size = original_size
 
+        self.rect = pygame.Rect(0, 0, *self.window_size)
+
         super().__init__(self.original_size)
 
         self.surface: pygame.Surface
@@ -50,6 +52,8 @@ class ResizableScreen(ScreenSdl2):
     def on_resize(self, new_size):
         self.window_size = new_size
         self.surface = pygame.Surface(self.window_size, flags=SRCALPHA)
+
+        self.rect.update(0, 0, *self.window_size)
 
     def update_window(self):
         debug_texture = Texture.from_surface(self.renderer, self.surface)

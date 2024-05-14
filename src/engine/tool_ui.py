@@ -4,6 +4,7 @@ from .asset_manager import AssetManager
 from .face_mesh import FaceMesh
 from .ui import *
 from .constants import *
+from .mouse import Mouse
 
 
 class Tool:
@@ -27,20 +28,36 @@ class Tool:
 
         # --- face 1 context menu
         face_1_functions = (self.hello, self.hello)
-        self.face_1_context = generate_face_1_context(face_1_functions)
-        
-        self.face_1_context.update_positions()
-        
+        self.face_1_context = generate_face_1_context(
+            self, self.window.rect, face_1_functions
+            )
+        self.face_2_context = generate_face_2_context(
+            self, self.window.rect, face_1_functions
+            )
+
+        self.focus_context = None
 
         self.on_resize(self.window.window_size)
 
         self.wireframe = False
 
     def update(self):
-        self.face_1_context.update()
-        
+        if self.focus_context is not None:
+            self.focus_context.update()
 
+        if self.face_1_view_scaled.collidepoint(Mouse.position):
+            self.focus_context = self.face_1_context
+
+        elif self.face_2_view_scaled.collidepoint(Mouse.position):
+            self.focus_context = self.face_2_context
+
+        else:
+            self.focus_context = None
+        
     def draw(self):
+        self.window.renderer.draw_color = BG_COLOR
+        self.window.renderer.clear()   
+
         surface = self.window.surface
         face_1_rect, fitted_points = self.face_mesh_1.fit_to(self.face_1_view_scaled)
         face_2_rect = self.face_mesh_2.image_rect.fit(self.face_2_view_scaled)
@@ -65,13 +82,15 @@ class Tool:
         
         self.face_mesh_1.map_to(result_points)
 
-        self.face_1_context.draw(surface)
+        if self.focus_context is not None:
+            self.focus_context.draw(surface)
 
     def hello(self):
         print('і бачу і бачу')
 
     def handle_event(self, event):
-        self.face_1_context.handle_event(event)
+        if self.focus_context is not None:
+            self.focus_context.handle_event(event)
 
     def draw_mesh(self, points):
         for triangle in self.triangles:
