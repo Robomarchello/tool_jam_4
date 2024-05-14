@@ -1,11 +1,12 @@
 from pathlib import Path
 from typing import Dict
+import tkinter
+import tkinter.filedialog
 import os
 import pygame
-#from .constants import *
+from .constants import *
 
 pygame.init()
-
 
 
 class AssetManager():
@@ -72,7 +73,26 @@ class AssetManager():
 
         return font
 
-    
+    @classmethod
+    def select_image(cls):
+        top = tkinter.Tk()
+        top.withdraw()  # hide window
+        file_name = tkinter.filedialog.askopenfilename(
+            parent=top, filetypes=IMAGE_TYPES)
+        top.destroy()
+
+        return file_name
+
+    @classmethod
+    def select_file(cls):
+        top = tkinter.Tk()
+        top.withdraw()  # hide window
+        file_name = tkinter.filedialog.askopenfilename(
+            parent=top, filetypes=PRESET_TYPES)
+        top.destroy()
+
+        return file_name
+        
     @classmethod
     def load_sounds(cls, path):
         for name in os.listdir(path):

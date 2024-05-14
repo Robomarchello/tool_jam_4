@@ -25,8 +25,12 @@ detector = landmarker_init()
 
 class FaceMesh:
     def __init__(self, renderer, image, mesh_path=None, triangles=None):
+        self.renderer = renderer
+
         self.surface = image
         self.texture: Texture = Texture.from_surface(renderer, self.surface)
+
+        self.is_detected = False
 
         # pygame surface to mediapipe image
         surface = pygame.transform.rotate(self.surface, 90)
@@ -51,6 +55,13 @@ class FaceMesh:
         detect face and return points on it
         '''
         detection_result = detector.detect(image)
+        
+        if len(detection_result.face_landmarks) == 0:
+            self.is_detected = False
+            return
+        else:
+            self.is_detected = True
+        
         points = detection_result.face_landmarks[0]
         normal_points = list(map(lambda pos: (pos.x, pos.y), points))
 
@@ -66,8 +77,20 @@ class FaceMesh:
 
         with open(file_path, 'w') as file:
             json.dump(normal_points, file)
+
+    def load_mesh(self, file_path):
+        if file_path == '':
+            return
+
+        with open(file_path, 'r') as file:
+            self.normal_points = numpy.array(json.load(file))
+            
+        self.is_detected = True
     
     def cull_mask(self):
+        if not self.is_detected:
+            return None
+        
         blacklist = []
 
         for i, point in enumerate(self.normal_points):
@@ -103,7 +126,23 @@ class FaceMesh:
                 )
             self.texture.draw_triangle(*other_triangle, *from_tri_uv)
             
-            
+    def update_image(self, image_path):
+        if image_path == '':
+            return
+        self.surface = pygame.image.load(image_path)
+        self.texture: Texture = Texture.from_surface(self.renderer, self.surface)
+
+        # pygame surface to mediapipe image
+        surface = pygame.transform.rotate(self.surface, 90)
+        surface = pygame.transform.flip(surface, False, True)
+        pixels = pygame.surfarray.array3d(surface)
+        self.image = mp.Image(image_format=mp.ImageFormat.SRGB, data=pixels)
+        self.image_rect = self.surface.get_rect()
+
+        self.normal_points = self.detect_face(self.image)
+        self.triangles = TRIANGLES
+
+
 if __name__ == '__main__':
     import pygame._sdl2
 

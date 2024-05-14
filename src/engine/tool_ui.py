@@ -1,4 +1,5 @@
 import pygame
+from pygame._sdl2 import Texture
 import numpy
 from .asset_manager import AssetManager
 from .face_mesh import FaceMesh
@@ -11,13 +12,24 @@ class Tool:
     def __init__(self, window, image_1, image_2, preset_path1=None, preset_path2=None):
         self.window = window
 
+        self.impossible = False
+
+        self.error_image = AssetManager.images['error_image']
+        self.error_texture = Texture.from_surface(window.renderer, self.error_image)
+        self.error_rect = self.error_image.get_rect()
+
+        self.no_result_image = AssetManager.images['no_result']
+        self.no_result_texture = Texture.from_surface(window.renderer, self.no_result_image)
+        self.no_result_rect = self.error_image.get_rect()
+
         self.face_mesh_1 = FaceMesh(self.window.renderer, image_1, preset_path1)
         self.face_mesh_2 = FaceMesh(self.window.renderer, image_2, preset_path2)
         self.mesh_rect_2 = self.face_mesh_2.surface.get_rect()
 
         self.triangles = self.cull_meshes() 
 
-        self.mapped_points = self.face_mesh_2.scale(self.mesh_rect_2.size)
+        if not self.impossible:
+            self.mapped_points = self.face_mesh_2.scale(self.mesh_rect_2.size)
 
         # layout
         self.scaled_area = SCREENSIZE
@@ -27,12 +39,13 @@ class Tool:
         self.menu_panel_rect = pygame.Rect(0, 0, 128, self.scaled_area[1])
 
         # --- face 1 context menu
-        face_1_functions = (self.hello, self.hello)
+        face_1_functions = (self.face_1_set_preset, self.face_1_set_image)
+        face_2_functions = (self.face_2_set_preset, self.face_2_set_image)
         self.face_1_context = generate_face_1_context(
             self, self.window.rect, face_1_functions
             )
         self.face_2_context = generate_face_2_context(
-            self, self.window.rect, face_1_functions
+            self, self.window.rect, face_2_functions
             )
 
         self.focus_context = None
@@ -56,37 +69,114 @@ class Tool:
         
     def draw(self):
         self.window.renderer.draw_color = BG_COLOR
-        self.window.renderer.clear()   
+        self.window.renderer.clear()  
+
+        if self.face_mesh_1.is_detected and self.face_mesh_2.is_detected:
+            self.impossible = False
 
         surface = self.window.surface
-        face_1_rect, fitted_points = self.face_mesh_1.fit_to(self.face_1_view_scaled)
-        face_2_rect = self.face_mesh_2.image_rect.fit(self.face_2_view_scaled)
-        result_rect, result_points = self.face_mesh_2.fit_to(self.results_view_scaled)
-
+        if self.face_mesh_1.is_detected:
+            face_1_rect, fitted_points = self.face_mesh_1.fit_to(self.face_1_view_scaled)
+        else:
+            face_1_rect = self.error_rect.fit(self.face_1_view_scaled)
+        if self.face_mesh_2.is_detected:
+            face_2_rect = self.face_mesh_2.image_rect.fit(self.face_2_view_scaled)
+        
+            result_rect, result_points = self.face_mesh_2.fit_to(self.results_view_scaled)
+        else:
+            face_2_rect = self.error_rect.fit(self.face_2_view_scaled)
+            result_rect = self.no_result_rect.fit(self.results_view_scaled)
+            
         pygame.draw.rect(surface, CONTOUR_COLOR, self.face_1_view_scaled, width=3)
         pygame.draw.rect(surface, CONTOUR_COLOR, self.face_2_view_scaled, width=3)
         pygame.draw.rect(surface, CONTOUR_COLOR, self.results_view_scaled, width=3)
         pygame.draw.rect(surface, CONTOUR_COLOR, self.menu_panel_rect)
 
-        self.face_mesh_1.texture.draw(dstrect=face_1_rect)
-        self.face_mesh_2.texture.draw(dstrect=face_2_rect)
-        self.face_mesh_2.texture.draw(dstrect=result_rect)
-
-        if self.wireframe:
-            for point in self.mapped_points:
-                pygame.draw.circle(surface, (255, 0, 0), point, 3)
-            
-            self.draw_mesh(self.mapped_points)
-
-        self.draw_mesh(fitted_points)
+        if self.face_mesh_1.is_detected:
+            self.face_mesh_1.texture.draw(dstrect=face_1_rect)
+        else:
+            self.error_texture.draw(dstrect=face_1_rect)
+        if self.face_mesh_2.is_detected:
+            self.face_mesh_2.texture.draw(dstrect=face_2_rect)
         
-        self.face_mesh_1.map_to(result_points)
+            self.face_mesh_2.texture.draw(dstrect=result_rect)
+        else:
+            self.error_texture.draw(dstrect=face_2_rect)
+            self.no_result_texture.draw(dstrect=result_rect)
+
+            if self.wireframe:
+                for point in self.mapped_points:
+                    pygame.draw.circle(surface, (255, 0, 0), point, 3)
+                
+                self.draw_mesh(self.mapped_points)
+        
+        if not self.impossible:
+            self.draw_mesh(fitted_points)
+            
+            self.face_mesh_1.map_to(result_points)
 
         if self.focus_context is not None:
             self.focus_context.draw(surface)
 
-    def hello(self):
-        print('і бачу і бачу')
+    def face_1_set_image(self):
+        location = AssetManager.select_image()
+        
+        self.face_mesh_1.triangles = TRIANGLES
+        self.face_mesh_2.triangles = TRIANGLES
+
+        self.face_mesh_1.update_image(location)
+
+        self.triangles = self.cull_meshes()
+        if not self.impossible:
+            self.mapped_points = self.face_mesh_2.scale(self.mesh_rect_2.size)
+
+        self.draw()
+
+    def face_1_set_preset(self):
+        location = AssetManager.select_file()
+
+        if location == '':
+            return
+
+        self.face_mesh_1.triangles = TRIANGLES
+        self.face_mesh_2.triangles = TRIANGLES
+
+        self.face_mesh_1.load_mesh(location)
+        
+        self.triangles = self.cull_meshes()
+        self.mapped_points = self.face_mesh_2.scale(self.mesh_rect_2.size)
+
+        self.draw()
+
+    def face_2_set_image(self):
+        location = AssetManager.select_image()
+        
+        self.face_mesh_1.triangles = TRIANGLES
+        self.face_mesh_2.triangles = TRIANGLES
+
+        self.face_mesh_2.update_image(location)
+
+        self.triangles = self.cull_meshes()
+        if not self.impossible:
+            self.mapped_points = self.face_mesh_2.scale(self.mesh_rect_2.size)
+
+        self.draw()
+
+    def face_2_set_preset(self):
+        location = AssetManager.select_file()
+
+        if location == '':
+            return
+
+        self.face_mesh_1.triangles = TRIANGLES
+        self.face_mesh_2.triangles = TRIANGLES
+
+        self.face_mesh_2.load_mesh(location)
+        
+        self.triangles = self.cull_meshes()
+        self.mapped_points = self.face_mesh_2.scale(self.mesh_rect_2.size)
+
+        self.draw()
 
     def handle_event(self, event):
         if self.focus_context is not None:
@@ -105,6 +195,11 @@ class Tool:
     def cull_meshes(self):
         mask_1 = self.face_mesh_1.cull_mask()
         mask_2 = self.face_mesh_2.cull_mask()
+
+        if mask_1 is None or mask_2 is None:
+            self.impossible = True
+            return None
+        
         mask = numpy.bitwise_and(mask_1, mask_2)
 
         triangles = numpy.array(TRIANGLES)[mask]
