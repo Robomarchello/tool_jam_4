@@ -66,7 +66,7 @@ class SideBar:
         self.save_button.rect.bottom = self.rect.bottom - 10
 
         self.save_button_1.rect.centerx = self.rect.centerx
-        self.save_button_1.rect.bottom = self.button_rect.top - 10
+        self.save_button_1.rect.bottom = self.save_button.rect.top - 10
 
         self.save_button.update_rect()
         self.save_button_1.update_rect()
